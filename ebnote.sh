@@ -1,6 +1,5 @@
-user=""
-backup="/home/$user/Documents/.Boostnote.tar.gz.gpg.backup"
-encrypted="/home/$user/Documents/.Boostnote.tar.gz.gpg"
+backup="/home/$USER/Documents/.Boostnote.tar.gz.gpg.backup"
+encrypted="/home/$USER/Documents/.Boostnote.tar.gz.gpg"
 decrypted="Boostnote.tar.gz"
 
 #Prev Cleanup
