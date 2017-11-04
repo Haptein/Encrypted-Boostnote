@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 backup="/home/$USER/Documents/.Boostnote.tar.gz.gpg.backup"
 encrypted="/home/$USER/Documents/.Boostnote.tar.gz.gpg"
 decrypted="Boostnote.tar.gz"
