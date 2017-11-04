@@ -25,5 +25,5 @@ if [ -d /tmp/Boostnote ]; then
     tar czf - Boostnote/ | gpg --batch --passphrase $pass -o $encrypted --symmetric --force-mdc --yes
     rm -r Boostnote/
 else
-    echo "Wrong Passphrase!"
+    notify-send "Wrong Passphrase!"
 fi
