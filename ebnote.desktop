@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Ebnote
+GenericName=Encrypted Boostnote.
+Comment=Keep your notes encrypted and synced.
+TryExec=/usr/bin/boostnote
+Exec=/usr/bin/ebnote
+Icon=boostnote
+Type=Application
+StartupNotify=true
+Categories=Development;Utility;
+MimeType=text/plain;
