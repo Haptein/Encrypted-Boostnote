@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+DIR=`dirname $0`
+cp $DIR/ebnote.sh /usr/bin/ebnote
+cp $DIR/ebnote.desktop /usr/share/applications/
