@@ -11,7 +11,7 @@ fi
 
 #Decrypt & Decompress
 cd /tmp/
-pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"`
+pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
 gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
 
 #if succesfully decrypted
