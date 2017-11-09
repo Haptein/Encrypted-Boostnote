@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 migration="To migrate your existent notes add your Boostnote storage folders to /tmp/Boostnote/ while the application is running.\nThen import them from within the application."
-backup="/home/$USER/Documents/.Boostnote.tar.gz.gpg.backup"
-encrypted="/home/$USER/Documents/.Boostnote.tar.gz.gpg"
+backup="/home/$USER/.Boostnote.tar.gz.gpg.backup"
+encrypted="/home/$USER/.Boostnote-encrypted/Boostnote.tar.gz.gpg"
 decrypted="Boostnote.tar.gz"
 
 cd /tmp/
@@ -14,6 +14,11 @@ fi
 
 #If first time
 if [ ! -e $encrypted ]; then
+
+    if [ ! -d "/home/$USER/.Boostnote-encrypted" ]; then
+        mkdir "/home/$USER/.Boostnote-encrypted"
+    fi
+
     mkdir /tmp/Boostnote
     zenity --info --title="Encrypted Boostnote" --icon-name=boostnote --text="$migration" --no-wrap 2>/dev/null
 
