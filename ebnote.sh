@@ -3,9 +3,11 @@
 remote="gdrive"
 migration="To migrate your existent notes add your Boostnote storage folders to /tmp/Boostnote/ while the application is running.\nThen import them from within the application."
 foundnothing="Found nothing really."
+settings_dir="/home/$USER/.config/Boostnote/Local Storage/"
 backup="/home/$USER/.Boostnote.tar.gz.gpg.backup"
 encrypted_dir="/home/$USER/.Boostnote-encrypted"
 encrypted="$encrypted_dir/Boostnote.tar.gz.gpg"
+encrypted_settings="$encrypted_dir/BoostnoteLS.tar.gz.gpg"
 decrypted="Boostnote.tar.gz"
 
 function pull {
@@ -111,6 +113,7 @@ if [ -d /tmp/Boostnote ]; then
 
     #Compress & Encrypt
     tar czf - Boostnote/ | gpg --batch --passphrase $pass -o $encrypted --symmetric --force-mdc --yes
+    tar czf - "$settings_dir" | gpg --batch --passphrase $pass -o $encrypted_settings --symmetric --force-mdc --yes
     rm -r Boostnote/
 
     #Push
