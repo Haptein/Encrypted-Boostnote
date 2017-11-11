@@ -92,7 +92,8 @@ if [ ! -e $encrypted ]; then
     else
         first_time_run
     fi
-
+elif [ $remote != "" ]; then
+    pull
 fi
 
 
