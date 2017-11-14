@@ -1,25 +1,87 @@
 #!/usr/bin/env bash
 
 remote="gdrive"
-migration="To migrate your existent notes add your Boostnote storage folders to /tmp/Boostnote/ while the application is running.\nThen import them from within the application."
-foundnothing="Found nothing really."
-settings_dir="/home/$USER/.config/Boostnote/Local Storage"
-backup="/home/$USER/.Boostnote.tar.gz.gpg.backup"
+
+#Directories
 encrypted_dir="/home/$USER/.Boostnote-encrypted"
+settings_dir="/home/$USER/.config/Boostnote/Local Storage"
+pull_dir="/tmp/Ebnote_pull"
+
+#Recurrent Files
 encrypted="$encrypted_dir/Boostnote.tar.gz.gpg"
 encrypted_settings="$encrypted_dir/BoostnoteLS.tar.gz.gpg"
 decrypted="Boostnote.tar.gz"
 
+#Messages
+migration="To migrate your existent notes add your Boostnote storage folders to /tmp/Boostnote/ while the application is running.\nThen import them from within the application."
+start_new="Couldn't find $encrypted. Would you like to create an new encrypted notes file?"
+
+
 function pull {
+    pulled="0"
+    cd /tmp/
     (
     echo "#Downloading changes..."
-    rclone sync $remote:Boostnote $encrypted_dir -u -v --retries 10
+    rclone sync $remote:Boostnote "$pull_dir/" -u -v --retries 10
     if [ $? != 0 ]; then
         notify-send -i boostnote "Couldn't download copy from $remote."
     else
-        notify-send -i boostnote "Changes downloaded from $remote successfully."
+        #notify-send -i boostnote "Changes downloaded from $remote successfully."
+        pulled="1"
     fi
     ) | zenity --progress --pulsate --auto-close 2>/dev/null
+    
+    #If established conection with remote successfully
+    if [ $pulled=="1" ]; then
+
+        #If found encrypted notes in remote
+        if [ -e "$pull_dir/Boostnote.tar.gz.gpg" ]; then
+            notify-send -i boostnote "Changes downloaded from $remote successfully."
+
+            pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
+            #Decrypt and decompress local notes if any.
+            if [ -e $encrypted ]; then
+                gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
+                if [ ! -d /tmp/Boostnote ]; then
+                    notify-send -i boostnote "Wrong passphrase!"
+                    exit 1
+                fi
+            fi
+            
+            #Decrypt & Decompress remote files
+            cd $pull_dir
+            gpg --lock-multiple --batch --passphrase $pass -d "$pull_dir/Boostnote.tar.gz.gpg" | tar xzf - Boostnote
+
+            if [ $? == 0 ]; then
+                #Create /tmp/Boosnote if $encrpyted doesnt exist
+                if [ ! -d /tmp/Boostnote ]; then
+                    mkdir /tmp/Boostnote
+                    cd /tmp/Boostnote
+                    git init
+                    echo "*.cson merge=union" >> .gitattributes
+                    git add . && git commit -m 'Initial commit'
+                    git remote add origin "$pull_dir/Boostnote"
+                    git pull origin master --allow-unrelated-histories -s recursive -X theirs
+                else
+                    #Pull changes from remote copy
+                    cd /tmp/Boostnote
+                    git pull origin master --allow-unrelated-histories
+                    #git pull origin master --allow-unrelated-histories -s recursive -X ours
+                fi
+                #Delete remote copy################
+                rm -rf $pull_dir
+            else
+                notify-send -i boostnote "Wrong remote passphrase!"
+                exit 1
+            fi
+
+        else
+            #Found nothing in remote
+            notify-send -i boostnote "Couldn't find encrypted notes in $remote."
+        fi
+
+        cd /tmp/
+    fi
 }
 
 function push {
@@ -31,7 +93,7 @@ function push {
     else
         notify-send -i boostnote "Changes uploaded to $remote successfully."
     fi
-    ) | zenity --progress --auto-close 2>/dev/null
+    ) | zenity --progress --pulsate --auto-close 2>/dev/null
 }
 
 function first_time_run {
@@ -69,10 +131,14 @@ cd /tmp/
 
 #Prev Cleanup
 if [ -d /tmp/Boostnote ]; then
-    rm -r /tmp/Boostnote
+    rm -rf /tmp/Boostnote
 fi
 
-#If first time
+if [ -d $pull_dir ]; then
+    rm -rf $pull_dir
+fi
+
+#No local found
 if [ ! -e $encrypted ]; then
 
     if [ ! -d $encrypted_dir ]; then
@@ -80,44 +146,75 @@ if [ ! -e $encrypted ]; then
     fi
 
     if [ $remote != "" ]; then
+        #No local encrypted notes, remote enabled.
         pull
-        #If couldn't find encrypted boostnote file in remote
-        if [ ! -e $encrypted ]; then
-            zenity --question --title="Encrypted Boostnote" --text="$foundnothing" 2>/dev/null
+        #If still no encrypted local notes
+        if [ ! -d /tmp/Boostnote ]; then
+            zenity --question --title="Encrypted Boostnote" --text="$start_new" 2>/dev/null
             if [ $? == 0 ]; then
                 first_time_run
             else
                 exit 1
             fi
         fi
-
     else
+        #No local encrypted-notes, remote disabled.
         first_time_run
     fi
-elif [ $remote != "" ]; then
+
+#Local found
+elif [ "$remote" != "" ]; then
+    #Local found, remote enabled.
     pull
+    
+    #Found nothing in remote
+    if [ ! -d /tmp/Boostnote ];then
+        pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
+        gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
+        if [ ! -d /tmp/Boostnote ]; then
+            notify-send -i boostnote "Wrong passphrase!"
+            exit 1
+        fi
+    fi
+else
+    #Local found, remote disabled.
+    pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
+    gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
 fi
 
 
-#Decrypt & Decompress
-pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
-gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
-
 #if succesfully decrypted or first run
 if [ -d /tmp/Boostnote ]; then
-    #Backup
-    cp -u $encrypted $backup
+
+    #Make sure git is initialized
+    cd /tmp/Boostnote
+    git status 2>/dev/null
+    if [ $? == 128 ]; then
+        git init
+        echo "*.cson merge=union" >> .gitattributes
+        git add . && git commit -m 'Initial commit'
+        git remote add origin "$pull_dir/Boostnote"
+    fi
+    cd /tmp/
 
     #Run
-    boostnote
+    boostnote 2>/dev/null
+
+    #commit changes
+    cd /tmp/Boostnote
+    git add . && git commit -m "[`hostname`]: `date`"
+    cd /tmp/
 
     #Compress & Encrypt
-    tar czf - Boostnote/ | gpg --batch --passphrase $pass -o $encrypted --symmetric --force-mdc --yes
+    tar czf - Boostnote | gpg --batch --passphrase $pass -o $encrypted --symmetric --force-mdc --yes
     tar czf - "$settings_dir" | gpg --batch --passphrase $pass -o $encrypted_settings --symmetric --force-mdc --yes
-    rm -r Boostnote/
+    rm -rf Boostnote/
+    #rm -rf $pull_dir/
 
     #Push
-    push
+    if [ "$remote" != "" ]; then
+        push
+    fi
 
 else
     notify-send -i boostnote "Wrong Passphrase!"
