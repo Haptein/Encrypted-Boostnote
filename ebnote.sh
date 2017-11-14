@@ -87,6 +87,10 @@ if [ -d /tmp/Boostnote ]; then
     rm -r /tmp/Boostnote
 fi
 
+if [ -d $pull_dir ]; then
+    rm -r $pull_dir
+fi
+
 #If first time
 if [ ! -e $encrypted ]; then
 
