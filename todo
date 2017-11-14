@@ -1,2 +1,3 @@
-Sync .config/Boostnote/ as well.
+Sync .config/Boostnote/ as well?
 git merging:	avoid opening editor whenc conflicts arrise
+zenity:		fix titles, check all texts.
