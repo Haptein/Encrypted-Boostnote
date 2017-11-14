@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+#Modify this variable to enable syncing, for example: remote="your_rclone_remote"
 remote=""
 
 #Directories
