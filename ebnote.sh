@@ -1,18 +1,26 @@
 #!/usr/bin/env bash
 
 remote="gdrive"
+
+#Messages
 migration="To migrate your existent notes add your Boostnote storage folders to /tmp/Boostnote/ while the application is running.\nThen import them from within the application."
-foundnothing="Found nothing really."
-settings_dir="/home/$USER/.config/Boostnote/Local Storage"
-backup="/home/$USER/.Boostnote.tar.gz.gpg.backup"
+start_new="Couldn't find $encrypted. Would you like to create an new encrypted notes file?"
+
+#Directories
 encrypted_dir="/home/$USER/.Boostnote-encrypted"
+settings_dir="/home/$USER/.config/Boostnote/Local Storage"
+pull_dir="/tmp/Ebnote_pull"
+
+#Recurrent Files
+backup="/home/$USER/.Boostnote.tar.gz.gpg.backup"
 encrypted="$encrypted_dir/Boostnote.tar.gz.gpg"
 encrypted_settings="$encrypted_dir/BoostnoteLS.tar.gz.gpg"
 decrypted="Boostnote.tar.gz"
 
-pull_dir="/tmp/Ebnote_pull"
+
 function pull {
     pulled="0"
+    cd /tmp/
     (
     echo "#Downloading changes..."
     rclone sync $remote:Boostnote "$pull_dir/" -u -v --retries 10
@@ -27,23 +35,27 @@ function pull {
     #If established conection with remote and downloaded files
     if [ $pulled=="1" ]; then
 
+        #Get passphrase, decrypt and decompress local notes.
         pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
+        gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
 
-        #If encrypted notes in remote
+        #If found encrypted notes in remote
         if [ -e "$pull_dir/Boostnote.tar.gz.gpg" ]; then
             #Decrypt & Decompress remote files
             cd $pull_dir
             gpg --lock-multiple --batch --passphrase $pass -d "$pull_dir/Boostnote.tar.gz.gpg" | tar xzf - Boostnote
+
+            #Pull changes from remote copy
+            cd /tmp/Boostnote
+            git pull origin master --allow-unrelated-histories -s recursive -X ours
+
+            #Delete remote copy
+            rm -rf $pull_dir
+
         else
             #Found nothing in remote
-            zenity --question --title="Encrypted Boostnote" --text="$foundnothing" 2>/dev/null
+            notify-send -i boostnote "Couldn't find encrypted notes in $remote."
         fi
-
-        cd /tmp/
-        gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
-
-        cd Boostnote
-        git pull origin master --allow-unrelated-histories -s recursive -X ours
 
         cd /tmp/
     fi
@@ -111,32 +123,30 @@ if [ ! -e $encrypted ]; then
     fi
 
     if [ $remote != "" ]; then
+        #No local encrypted notes, remote enabled.
         pull
-        #If couldn't find encrypted boostnote file in remote
+        #If still no encrypted local notes
         if [ ! -e $encrypted ]; then
-            zenity --question --title="Encrypted Boostnote" --text="$foundnothing" 2>/dev/null
+            zenity --question --title="Encrypted Boostnote" --text="$start_new" 2>/dev/null
             if [ $? == 0 ]; then
                 first_time_run
             else
                 exit 1
             fi
         fi
-
     else
+        #No local encrypted-notes, remote disabled.
         first_time_run
     fi
 elif [ $remote != "" ]; then
+    #Local found, remote enabled.
     pull
 else
-    #Decrypt & Decompress
+    #Local found, remote disabled.
     pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
     gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
 fi
 
-
-#Decrypt & Decompress
-#pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
-#gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
 
 #if succesfully decrypted or first run
 if [ -d /tmp/Boostnote ]; then
@@ -156,7 +166,7 @@ if [ -d /tmp/Boostnote ]; then
 
     #commit changes
     cd /tmp/Boostnote
-    git add . && git commit -m "`date`"
+    git add . && git commit -m "[`hostname`]: `date`"
     cd /tmp/
 
     #Compress & Encrypt
