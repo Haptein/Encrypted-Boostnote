@@ -66,9 +66,8 @@ function pull {
                     #Pull changes from remote copy
                     cd /tmp/Boostnote
                     git pull origin master --allow-unrelated-histories
-                    #git pull origin master --allow-unrelated-histories -s recursive -X ours
                 fi
-                #Delete remote copy################
+                #Delete remote copy
                 rm -rf $pull_dir
             else
                 notify-send -i boostnote "Wrong remote passphrase!"
