@@ -3,7 +3,7 @@
 remote="gdrive"
 migration="To migrate your existent notes add your Boostnote storage folders to /tmp/Boostnote/ while the application is running.\nThen import them from within the application."
 foundnothing="Found nothing really."
-settings_dir="/home/$USER/.config/Boostnote/Local Storage/"
+settings_dir="/home/$USER/.config/Boostnote/Local Storage"
 backup="/home/$USER/.Boostnote.tar.gz.gpg.backup"
 encrypted_dir="/home/$USER/.Boostnote-encrypted"
 encrypted="$encrypted_dir/Boostnote.tar.gz.gpg"
