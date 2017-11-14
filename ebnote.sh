@@ -136,15 +136,21 @@ if [ -d /tmp/Boostnote ]; then
     #Backup
     cp -u $encrypted $backup
 
+    #Make sure git is initialized
+    cd /tmp/Boostnote
+    git status 2>/dev/null
+    if [ $? == 128 ]; then
+        git init
+    fi
+    cd /tmp/
+
     #Run
     boostnote
 
     #commit changes
-    if [ $remote != "" ]; then
-        cd /tmp/Boostnote
-        git add . && git commit -m "`date`"
-        cd /tmp/
-    fi
+    cd /tmp/Boostnote
+    git add . && git commit -m "`date`"
+    cd /tmp/
 
     #Compress & Encrypt
     tar czf - Boostnote | gpg --batch --passphrase $pass -o $encrypted --symmetric --force-mdc --yes
