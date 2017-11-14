@@ -27,30 +27,51 @@ function pull {
     if [ $? != 0 ]; then
         notify-send -i boostnote "Couldn't download copy from $remote."
     else
-        notify-send -i boostnote "Changes downloaded from $remote successfully."
+        #notify-send -i boostnote "Changes downloaded from $remote successfully."
         pulled="1"
     fi
     ) | zenity --progress --pulsate --auto-close 2>/dev/null
     
-    #If established conection with remote and downloaded files
+    #If established conection with remote successfully
     if [ $pulled=="1" ]; then
 
-        #Get passphrase, decrypt and decompress local notes.
+        #Get passphrase, decrypt and decompress local notes if any.
         pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
-        gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
+        if [ -e $encrypted ]; then
+            gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
+            if [ ! -d /tmp/Boostnote ]; then
+                notify-send -i boostnote "Wrong passphrase!"
+                exit 1
+            fi
+        fi
+        #By now /tmp/Boostnote must exist if $encrypted exists
 
         #If found encrypted notes in remote
         if [ -e "$pull_dir/Boostnote.tar.gz.gpg" ]; then
+            notify-send -i boostnote "Changes downloaded from $remote successfully."
+
             #Decrypt & Decompress remote files
             cd $pull_dir
             gpg --lock-multiple --batch --passphrase $pass -d "$pull_dir/Boostnote.tar.gz.gpg" | tar xzf - Boostnote
 
-            #Pull changes from remote copy
-            cd /tmp/Boostnote
-            git pull origin master --allow-unrelated-histories -s recursive -X ours
+            if [ $? == 0 ]; then
+                #Create /tmp/Boosnote if $encryoted doesnt exist
+                if [ ! -d /tmp/Boostnote ]; then
+                    mkdir /tmp/Boostnote
+                    cd /tmp/Boosnote
+                    git init
+                    git remote add origin "$pull_dir/Boostnote"
+                fi
 
-            #Delete remote copy
-            rm -rf $pull_dir
+                #Pull changes from remote copy
+                cd /tmp/Boostnote
+                git pull origin master --allow-unrelated-histories -s recursive -X ours
+                #Delete remote copy
+                rm -rf $pull_dir
+            else
+                notify-send -i boostnote "Wrong remote passphrase!"
+                exit 1
+            fi
 
         else
             #Found nothing in remote
@@ -115,7 +136,7 @@ if [ -d $pull_dir ]; then
     rm -rf $pull_dir
 fi
 
-#If first time
+#No local found
 if [ ! -e $encrypted ]; then
 
     if [ ! -d $encrypted_dir ]; then
@@ -126,7 +147,7 @@ if [ ! -e $encrypted ]; then
         #No local encrypted notes, remote enabled.
         pull
         #If still no encrypted local notes
-        if [ ! -e $encrypted ]; then
+        if [ ! -e /tmp/Boostnote ]; then
             zenity --question --title="Encrypted Boostnote" --text="$start_new" 2>/dev/null
             if [ $? == 0 ]; then
                 first_time_run
@@ -138,6 +159,8 @@ if [ ! -e $encrypted ]; then
         #No local encrypted-notes, remote disabled.
         first_time_run
     fi
+
+#Local found
 elif [ $remote != "" ]; then
     #Local found, remote enabled.
     pull
@@ -158,6 +181,8 @@ if [ -d /tmp/Boostnote ]; then
     git status 2>/dev/null
     if [ $? == 128 ]; then
         git init
+        git add . && git commit -m 'Initial commit'
+        git remote add origin "$pull_dir/Boostnote"
     fi
     cd /tmp/
 
