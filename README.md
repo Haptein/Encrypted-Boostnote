@@ -23,6 +23,6 @@ To add a remote to rclone follow [these instructions](https://rclone.org/docs/#c
 - zenity (UI)
 - GPG (encryption)
 
-####Optional:
+#### Optional:
 - rclone (syncing)
 - git (conflict management)
