@@ -3,23 +3,43 @@
 remote="gdrive"
 migration="To migrate your existent notes add your Boostnote storage folders to /tmp/Boostnote/ while the application is running.\nThen import them from within the application."
 foundnothing="Found nothing really."
-settings_dir="/home/$USER/.config/Boostnote/Local Storage/"
+settings_dir="/home/$USER/.config/Boostnote/Local Storage"
 backup="/home/$USER/.Boostnote.tar.gz.gpg.backup"
 encrypted_dir="/home/$USER/.Boostnote-encrypted"
 encrypted="$encrypted_dir/Boostnote.tar.gz.gpg"
 encrypted_settings="$encrypted_dir/BoostnoteLS.tar.gz.gpg"
 decrypted="Boostnote.tar.gz"
 
+pull_dir="/tmp/Ebnote_pull"
 function pull {
+    pulled="0"
     (
     echo "#Downloading changes..."
-    rclone sync $remote:Boostnote $encrypted_dir -u -v --retries 10
+    rclone sync $remote:Boostnote "$pull_dir/" -u -v --retries 10
     if [ $? != 0 ]; then
         notify-send -i boostnote "Couldn't download copy from $remote."
     else
         notify-send -i boostnote "Changes downloaded from $remote successfully."
+        pulled="1"
     fi
     ) | zenity --progress --pulsate --auto-close 2>/dev/null
+    
+    if [ $pulled=="1" ]; then
+        #Decrypt & Decompress
+        cd $pull_dir
+        pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
+        gpg --lock-multiple --batch --passphrase $pass -d "$pull_dir/Boostnote.tar.gz.gpg" | tar xzf - Boostnote
+
+        cd /tmp/
+        gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
+
+        cd Boostnote
+        #git remote add origin "$pull_dir/Boostnote"
+        #git branch --set-upstream-to=origin/master master
+        git pull origin master# --allow-unrelated-histories
+
+        cd /tmp/
+    fi
 }
 
 function push {
@@ -31,7 +51,7 @@ function push {
     else
         notify-send -i boostnote "Changes uploaded to $remote successfully."
     fi
-    ) | zenity --progress --auto-close 2>/dev/null[
+    ) | zenity --progress --pulsate --auto-close 2>/dev/null
 }
 
 function first_time_run {
@@ -69,7 +89,11 @@ cd /tmp/
 
 #Prev Cleanup
 if [ -d /tmp/Boostnote ]; then
-    rm -r /tmp/Boostnote
+    rm -rf /tmp/Boostnote
+fi
+
+if [ -d $pull_dir ]; then
+    rm -rf $pull_dir
 fi
 
 #If first time
@@ -96,12 +120,16 @@ if [ ! -e $encrypted ]; then
     fi
 elif [ $remote != "" ]; then
     pull
+else
+    #Decrypt & Decompress
+    pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
+    gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
 fi
 
 
 #Decrypt & Decompress
-pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
-gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
+#pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
+#gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
 
 #if succesfully decrypted or first run
 if [ -d /tmp/Boostnote ]; then
@@ -112,9 +140,10 @@ if [ -d /tmp/Boostnote ]; then
     boostnote
 
     #Compress & Encrypt
-    tar czf - Boostnote/ | gpg --batch --passphrase $pass -o $encrypted --symmetric --force-mdc --yes
+    tar czf - Boostnote | gpg --batch --passphrase $pass -o $encrypted --symmetric --force-mdc --yes
     tar czf - "$settings_dir" | gpg --batch --passphrase $pass -o $encrypted_settings --symmetric --force-mdc --yes
-    rm -r Boostnote/
+    rm -rf Boostnote/
+    rm -rf $pull_dir/
 
     #Push
     push
