@@ -36,8 +36,7 @@ function pull {
         cd Boostnote
         #git remote add origin "$pull_dir/Boostnote"
         #git branch --set-upstream-to=origin/master master
-        git pull origin master
-        # --allow-unrelated-histories
+        git pull origin master --allow-unrelated-histories
 
         cd /tmp/
     fi
@@ -140,6 +139,11 @@ if [ -d /tmp/Boostnote ]; then
     #Run
     boostnote
 
+    #commit changes
+    cd /tmp/Boostnote
+    git add . && git commit -m "`date`"
+    cd /tmp/
+    
     #Compress & Encrypt
     tar czf - Boostnote | gpg --batch --passphrase $pass -o $encrypted --symmetric --force-mdc --yes
     tar czf - "$settings_dir" | gpg --batch --passphrase $pass -o $encrypted_settings --symmetric --force-mdc --yes
