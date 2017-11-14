@@ -7,7 +7,7 @@ backup="/home/$USER/.Boostnote.tar.gz.gpg.backup"
 
 pull_dir="/tmp/Ebnote_pull/"
 encrypted_dir="/home/$USER/.Boostnote-encrypted"
-settings_dir="/home/$USER/.config/Boostnote/Local Storage/"
+settings_dir="/home/$USER/.config/Boostnote/Local Storage"
 
 encrypted="$encrypted_dir/Boostnote.tar.gz.gpg"
 encrypted_settings="$encrypted_dir/BoostnoteLS.tar.gz.gpg"
@@ -32,7 +32,7 @@ function pull {
         git remote add origin "$pull_dir/Boostnote"
         git branch --set-upstream-to=origin/master master
         git pull --allow-unrelated-histories
-
+        cd /tmp/
     fi
     ) | zenity --progress --pulsate --auto-close 2>/dev/null
 }
@@ -46,7 +46,7 @@ function push {
     else
         notify-send -i boostnote "Changes uploaded to $remote successfully."
     fi
-    ) | zenity --progress --auto-close 2>/dev/null[
+    ) | zenity --progress --auto-close 2>/dev/null
 }
 
 function first_time_run {
@@ -84,11 +84,11 @@ cd /tmp/
 
 #Prev Cleanup
 if [ -d /tmp/Boostnote ]; then
-    rm -r /tmp/Boostnote
+    rm -rf /tmp/Boostnote
 fi
 
 if [ -d $pull_dir ]; then
-    rm -r $pull_dir
+    rm -rf $pull_dir
 fi
 
 #If first time
@@ -122,6 +122,8 @@ else
     gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
 fi
 
+
+
 #if succesfully decrypted or first run
 if [ -d /tmp/Boostnote ]; then
     #Backup
@@ -130,10 +132,13 @@ if [ -d /tmp/Boostnote ]; then
     #Run
     boostnote
 
+    #cd Boostnote
+    #git add . && git commit -m "date"
+    #cd /tmp/
     #Compress & Encrypt
     tar czf - Boostnote/ | gpg --batch --passphrase $pass -o $encrypted --symmetric --force-mdc --yes
     tar czf - "$settings_dir" | gpg --batch --passphrase $pass -o $encrypted_settings --symmetric --force-mdc --yes
-    rm -r Boostnote/
+    rm -rf Boostnote/
 
     #Push
     push
