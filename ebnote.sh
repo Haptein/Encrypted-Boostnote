@@ -36,7 +36,8 @@ function pull {
         cd Boostnote
         #git remote add origin "$pull_dir/Boostnote"
         #git branch --set-upstream-to=origin/master master
-        git pull origin master# --allow-unrelated-histories
+        git pull origin master
+        # --allow-unrelated-histories
 
         cd /tmp/
     fi
