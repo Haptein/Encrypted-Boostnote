@@ -31,7 +31,7 @@ function push {
     else
         notify-send -i boostnote "Changes uploaded to $remote successfully."
     fi
-    ) | zenity --progress --auto-close 2>/dev/null[
+    ) | zenity --progress --auto-close 2>/dev/null
 }
 
 function first_time_run {
