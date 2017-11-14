@@ -146,7 +146,7 @@ if [ ! -e $encrypted ]; then
         #No local encrypted notes, remote enabled.
         pull
         #If still no encrypted local notes
-        if [ ! -e /tmp/Boostnote ]; then
+        if [ ! -d /tmp/Boostnote ]; then
             zenity --question --title="Encrypted Boostnote" --text="$start_new" 2>/dev/null
             if [ $? == 0 ]; then
                 first_time_run
@@ -160,9 +160,19 @@ if [ ! -e $encrypted ]; then
     fi
 
 #Local found
-elif [ $remote != "" ]; then
+elif [ "$remote" != "" ]; then
     #Local found, remote enabled.
     pull
+    
+    #Found nothing in remote
+    if [ ! -d /tmp/Boostnote ];then
+        pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
+        gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
+        if [ ! -d /tmp/Boostnote ]; then
+            notify-send -i boostnote "Wrong passphrase!"
+            exit 1
+        fi
+    fi
 else
     #Local found, remote disabled.
     pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
@@ -198,7 +208,7 @@ if [ -d /tmp/Boostnote ]; then
     rm -rf $pull_dir/
 
     #Push
-    if [ $remote != "" ]; then
+    if [ "$remote" != "" ]; then
         push
     fi
 
