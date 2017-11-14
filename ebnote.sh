@@ -24,18 +24,25 @@ function pull {
     fi
     ) | zenity --progress --pulsate --auto-close 2>/dev/null
     
+    #If established conection with remote and downloaded files
     if [ $pulled=="1" ]; then
-        #Decrypt & Decompress
-        cd $pull_dir
+
         pass=`zenity --entry --text="Enter your passphrase" --hide-text --title="Encrypted Boostnote"  2>/dev/null`
-        gpg --lock-multiple --batch --passphrase $pass -d "$pull_dir/Boostnote.tar.gz.gpg" | tar xzf - Boostnote
+
+        #If encrypted notes in remote
+        if [ -e "$pull_dir/Boostnote.tar.gz.gpg" ]; then
+            #Decrypt & Decompress remote files
+            cd $pull_dir
+            gpg --lock-multiple --batch --passphrase $pass -d "$pull_dir/Boostnote.tar.gz.gpg" | tar xzf - Boostnote
+        else
+            #Found nothing in remote
+            zenity --question --title="Encrypted Boostnote" --text="$foundnothing" 2>/dev/null
+        fi
 
         cd /tmp/
         gpg --lock-multiple --batch --passphrase $pass -d $encrypted | tar xzf - Boostnote
 
         cd Boostnote
-        #git remote add origin "$pull_dir/Boostnote"
-        #git branch --set-upstream-to=origin/master master
         git pull origin master --allow-unrelated-histories -s recursive -X ours
 
         cd /tmp/
