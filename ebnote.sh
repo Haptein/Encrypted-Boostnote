@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-remote="gdrive"
+remote=""
 
 #Directories
 encrypted_dir="/home/$USER/.Boostnote-encrypted"
@@ -26,7 +26,6 @@ function pull {
     if [ $? != 0 ]; then
         notify-send -i boostnote "Couldn't download copy from $remote."
     else
-        #notify-send -i boostnote "Changes downloaded from $remote successfully."
         pulled="1"
     fi
     ) | zenity --progress --pulsate --auto-close 2>/dev/null
