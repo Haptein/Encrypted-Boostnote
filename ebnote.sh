@@ -140,10 +140,12 @@ if [ -d /tmp/Boostnote ]; then
     boostnote
 
     #commit changes
-    cd /tmp/Boostnote
-    git add . && git commit -m "`date`"
-    cd /tmp/
-    
+    if [ $remote != "" ]; then
+        cd /tmp/Boostnote
+        git add . && git commit -m "`date`"
+        cd /tmp/
+    fi
+
     #Compress & Encrypt
     tar czf - Boostnote | gpg --batch --passphrase $pass -o $encrypted --symmetric --force-mdc --yes
     tar czf - "$settings_dir" | gpg --batch --passphrase $pass -o $encrypted_settings --symmetric --force-mdc --yes
@@ -151,7 +153,9 @@ if [ -d /tmp/Boostnote ]; then
     rm -rf $pull_dir/
 
     #Push
-    push
+    if [ $remote != "" ]; then
+        push
+    fi
 
 else
     notify-send -i boostnote "Wrong Passphrase!"
