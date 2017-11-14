@@ -8,6 +8,9 @@ Keep your notes encrypted and synced.
 sudo ./INSTALL
 ```
 
+# Usage
+You can just select Ebnote from your app launcher or type _ebnote_ in a terminal.
+
 # Syncing
 Encripted-Boostnote integrates Boostnote with rclone in order to keep your notes synced between different machines.
 
