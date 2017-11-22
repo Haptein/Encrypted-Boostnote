@@ -29,7 +29,7 @@ function pull {
     else
         pulled="1"
     fi
-    ) | zenity --progress --pulsate --auto-close 2>/dev/null
+    ) | zenity --progress --title="Encrypted Boostnote" --pulsate --auto-close 2>/dev/null
     
     #If established conection with remote successfully
     if [ $pulled=="1" ]; then
@@ -92,7 +92,7 @@ function push {
     else
         notify-send -i boostnote "Changes uploaded to $remote successfully."
     fi
-    ) | zenity --progress --pulsate --auto-close 2>/dev/null
+    ) | zenity --progress --title="Encrypted Boostnote" --pulsate --auto-close 2>/dev/null
 }
 
 function first_time_run {
@@ -100,7 +100,7 @@ function first_time_run {
     zenity --info --title="Encrypted Boostnote" --icon-name=boostnote --text="$migration" --no-wrap 2>/dev/null
     while true; do
         #Create passphrase
-        passphrase=`zenity --forms --add-password="Create a passphrase" --add-password="Confirm passphrase" --icon-name=boostnote --text="" --separator="\t" 2>/dev/null`
+        passphrase=`zenity --forms --title="Encrypted Boostnote" --add-password="Create a passphrase" --add-password="Confirm passphrase" --icon-name=boostnote --text="" --separator="\t" 2>/dev/null`
         
         case $? in
             0)
